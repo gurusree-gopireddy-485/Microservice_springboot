@@ -1,0 +1,5 @@
+com\example\loginms\UserInfoConfig.class
+com\example\loginms\AuthServerConfig.class
+com\example\loginms\LoginMsApplication.class
+com\example\loginms\UserInfoConfig$ResServerConfig.class
+com\example\loginms\JwtUtil.class

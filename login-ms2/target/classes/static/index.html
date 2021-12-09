@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Boot App ID Sample</title>
+    <link type="text/css" href="styles.css" rel="stylesheet" />
+    <script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
+    <script type="text/javascript" src="/webjars/js-cookie/js.cookie.js"></script>
+    <script type="text/javascript">
+        $.ajaxSetup({
+                beforeSend : function(xhr, settings) {
+                    if (settings.type == 'POST' || settings.type == 'PUT'
+                        || settings.type == 'DELETE') {
+                        if (!(/^http:.*/.test(settings.url) || /^https:.*/
+                            .test(settings.url))) {
+                            // Only send the token to relative URLs i.e. locally.
+                            xhr.setRequestHeader("X-XSRF-TOKEN",
+                                Cookies.get('XSRF-TOKEN'));
+                        }
+                    }
+                }
+            });
+        $.get("/user", function(data) {
+            $("#user").html(data.userAuthentication.details.name);
+            $("#userSub").html(data.userAuthentication.details.sub);
+            $("#userEmail").html(data.userAuthentication.details.email);
+            $("#provider").html(data.userAuthentication.details.identities[0].provider);
+            $(".unauthenticated").hide()
+            $(".authenticated").show()
+        }).fail(function() {
+            $(".unauthenticated").show()
+            $(".authenticated").hide()
+        });
+ 
+        <!-- In this case, we will call GET /userInfo, and this will give us back a string with userinfo details from Principal user -->
+        $.get("/userInfo", function(data) {
+            $("#userInfoString").html(data);
+            $(".unauthenticated").hide()
+            $(".authenticated").show()
+        }).fail(function() {
+            $(".unauthenticated").show()
+            $(".authenticated").hide()
+        });
+        
+        $.get("/userToken", function(data) {
+            $("#userToken").html(data);
+            $(".unauthenticated").hide()
+            $(".authenticated").show()
+        }).fail(function() {
+            $(".unauthenticated").show()
+            $(".authenticated").hide()
+        });
+ 
+        var logout = function() {
+            $.post("/logout", function() {
+                $("#user").html('');
+                $(".unauthenticated").show();
+                $(".authenticated").hide();
+            })
+            return true;
+        }
+    </script>
+    <style>
+   table tr:not(:first-child){
+                cursor: pointer;transition: all .25s ease-in-out;
+            }
+            table tr:not(:first-child):hover{background-color: #ddd;}
+    </style>
+ 
+</head>
+<div style="background-image: url('bigbasket.jpg');">
+<div class="container unauthenticated" style="text-align: center;" >
+<br><br><br><br>
+<p><h1> <marquee direction="right"src/main/resources/static/index.html">Welcome to Online Groceries Cart</marquee></h1></p>
+<br><br><br><br><br><br><br><br><br><br><br><br>
+    <a href="/login">Click here to Login</a>
+    <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+</div>
+</div>
+<div class="container authenticated" style="text-align: center;" >
+
+<table id="table1" border="1">
+  <tr>
+    <th>Welcome: </th>
+    <th><span id="user"></span></th>
+  </tr>
+  <tr>
+    <th>Sub:</th>
+    <th><span id="userSub"></span></th>
+  </tr>
+  <tr>
+    <th>Your email id in our records:</th>
+    <th><span id="userEmail"></span></th>
+    
+  </tr>
+  <tr>
+    <th>User Token:</th>
+    <th><span id="userToken"></th>
+    
+  </tr>
+  <tr>
+    <th>Transaction Token:</th>
+    <th><span id="txnToken"></span></th>
+   
+  </tr>
+ <tr> <button onClick="logout()">Logout</button></tr>
+  </table>
+   
+    </div>
+    <div class="container authenticated" style="text-align: left;" >
+    <strong>Please find below the list of available items and select the item you want to order:</strong>
+    <table id="table" border="1">
+  <tr>
+    <th>Item No.</th>
+    <th>Item Name</th>
+    <th>Price/Kg</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Rice</td>
+    <td>70</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Flour</td>
+    <td>50</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Dal</td>
+    <td>125</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Salt</td>
+    <td>20</td>
+  </tr>
+  </table>
+  <br>
+        <br>
+        Order Details:<br>
+        Item Name:<input type="text" name="itemNm" id="itemNm">        Quantity:<input type="text" name="qty" id="qty"><br><br>
+<input type="button" id="tst" value="Submit Order" onclick="fetchTxnToken();submitOrder();" />
+<br>
+<label id="orderId"></label>
+<script>
+var table = document.getElementById('table');
+                
+                for(var i = 1; i < table.rows.length; i++)
+                {
+                    table.rows[i].onclick = function()
+                    {
+                         //rIndex = this.rowIndex;
+                         document.getElementById("itemNm").value = this.cells[1].innerHTML;
+                         
+                    };
+                }
+function submitOrder(){
+	alert("Thanks for placing Order...Please do shopping more... :)");
+	if(document.getElementById('itemNm').value == null || document.getElementById('itemNm').value == '')
+		alert('Please select the item');
+	if(document.getElementById('qty').value == null || document.getElementById('qty').value == '')
+		alert('Please enter the quantity');
+	var itemName = document.getElementById('itemNm').value;
+	var quantity = document.getElementById('qty').value;
+	var userToken = document.getElementById('userToken').innerHTML;
+	var txnToken = document.getElementById("txnToken").innerHTML;
+	var url = "http://localhost:8095/orderms/add/"+itemName+"/"+quantity+"/"+userToken+"/"+txnToken;
+	// Make the AJAX call and fetch the Transaction Token.
+	
+	console.log("Url: " + url);
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+	    if (this.readyState == 4 && this.status == 200) {
+	       // Typical action to be performed when the document is ready:
+	        var response = xhttp.responseText;
+	        console.log("ok"+response);
+	        document.getElementById("orderId").innerHTML = response;
+	        document.getElementById('itemNm').value='';
+	        document.getElementById('qty').value='';
+	    }
+	};
+	
+	xhttp.open("GET", url, true);
+
+	xhttp.send();
+}
+function fetchTxnToken(){
+	$.ajax({
+		url : "/fetchTransactionToken",
+		success : function(data) {
+			console.log("Transaction Token: " + data);
+			document.getElementById("txnToken").innerHTML = data;
+			console.log("document.getElementById(txnToken).innerHTML: " + document.getElementById("txnToken").innerHTML);
+					},
+		error : function(data) {
+			console.log("Failed to fetch Transaction token");
+		}
+	});
+}
+</script>
+    <br>
+    </div>
+ 
+</div>
+</body>
+</html>
